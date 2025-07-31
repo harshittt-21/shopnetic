@@ -1,46 +1,51 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { CartProvider } from './context/CartContext';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-import Login from './pages/Login';
-import Checkout from './pages/Checkout';
-import AdminDashboard from './pages/admin/AdminDashboard';
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const session = require('express-session');
 
-function App() {
-  return (
-    <CartProvider>
-      <BrowserRouter>
-        <Navbar />
-        <div className="container mt-4">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-             <Route
-              path="/admin"
-              element={
-                localStorage.getItem('role') === 'admin' ? (
-                  <AdminDashboard />
-                ) : (
-                  <Navigate to="/" />
-                )
-              }
-            />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </CartProvider>
-  );
-}
+const app = express();
 
+// ✅ Enable CORS for both local and deployed frontend
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
 
-// inside <Routes> …
+app.use(express.json());
 
+// ✅ Session config
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'defaultsecret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: false, // Keep false unless you're using HTTPS + frontend & backend on same domain
+    httpOnly: true
+  }
+}));
 
-export default App;
+// ✅ Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('✅ MongoDB connected'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
+
+// ✅ Register routes
+app.use('/api/auth',     require('./routes/auth'));
+app.use('/api/products', require('./routes/products'));
+app.use('/api/cart',     require('./routes/cart'));
+app.use('/api/orders',   require('./routes/orders'));
+
+// ✅ Base route for testing
+app.get('/', (req, res) => {
+  res.send('🛍️ Shopnetic backend running');
+});
+
+// ✅ Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
