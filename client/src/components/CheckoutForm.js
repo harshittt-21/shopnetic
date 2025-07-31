@@ -13,7 +13,7 @@ const CheckoutForm = () => {
     const stripe = await stripePromise;
 
     // 1) Create a Checkout Session on your backend
-    const res = await fetch('http://localhost:5000/api/create-checkout-session', {
+    const res = await fetch('https://shopnetic-yxat.onrender.com/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cart }),
